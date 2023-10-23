@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/SWKOM_Projekt.iml" filepath="$PROJECT_DIR$/.idea/SWKOM_Projekt.iml" />
-      <module fileurl="file://$PROJECT_DIR$/spring-server-generated/swagger-spring.iml" filepath="$PROJECT_DIR$/spring-server-generated/swagger-spring.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/SWKOM_Projekt_working.iml" filepath="$PROJECT_DIR$/.idea/SWKOM_Projekt_working.iml" />
     </modules>
   </component>
 </project>
