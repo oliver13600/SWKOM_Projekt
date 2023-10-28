@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="FacetManager">
+    <facet type="jpa" name="JPA">
+      <configuration>
+        <setting name="validation-enabled" value="true" />
+        <setting name="provider-name" value="Hibernate" />
+        <datasource-mapping>
+          <factory-entry name="entityManagerFactory" value="9a690621-6185-4191-96f2-17d5e4bf5c19" />
+        </datasource-mapping>
+        <naming-strategy-map>
+          <unit-entry name="entityManagerFactory" value="org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy" />
+        </naming-strategy-map>
+      </configuration>
+    </facet>
+  </component>
+</module>
