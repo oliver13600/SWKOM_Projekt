@@ -23,7 +23,7 @@ services:
       - POSTGRES_DB=paperless
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
-      - ./Paperless_DM.sql:/docker-entrypoint-initdb.d/Paperless_DM.sql
+      - ./Paperless_DM.sql:/docker-entrypoint-initdb.d/PaperLess_DM.sql
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "paperless" ]
       interval: 10s
