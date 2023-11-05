@@ -67,6 +67,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Generated;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 import javax.servlet.http.HttpServletRequest;
@@ -74,7 +75,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-10-24T13:29:17.597026669Z[GMT]")
+@Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-10-24T13:29:17.597026669Z[GMT]")
 @Controller
 @CrossOrigin(origins = "http://localhost:8080")
 @RequestMapping("/api")

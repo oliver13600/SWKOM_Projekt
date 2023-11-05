@@ -3,12 +3,10 @@ package io.swagger.model;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
-<<<<<<<< Updated upstream:spring-server-generated/src/main/java/io/swagger/model/DocTag.java
-========
-
->>>>>>>> Stashed changes:SWKOM2023-main/src/main/java/io/swagger/model/DocTag.java
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.validation.annotation.Validated;
+
+import javax.annotation.Generated;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 
@@ -16,9 +14,7 @@ import javax.validation.constraints.*;
  * DocTag
  */
 @Validated
-<<<<<<<< Updated upstream:spring-server-generated/src/main/java/io/swagger/model/DocTag.java
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-09-25T10:52:03.827974241Z[GMT]")
-
+@Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-09-25T10:52:03.827974241Z[GMT]")
 
 public class DocTag   {
   @JsonProperty("id")
@@ -45,36 +41,6 @@ public class DocTag   {
   @JsonProperty("is_inbox_tag")
   private Boolean isInboxTag = null;
 
-========
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-10-24T13:29:17.597026669Z[GMT]")
-
-
-public class DocTag {
-  @JsonProperty("id")
-  private Long id = null;
-
-  @JsonProperty("slug")
-  private String slug = null;
-
-  @JsonProperty("name")
-  private String name = null;
-
-  @JsonProperty("color")
-  private String color = null;
-
-  @JsonProperty("match")
-  private String match = null;
-
-  @JsonProperty("matching_algorithm")
-  private Long matchingAlgorithm = null;
-
-  @JsonProperty("is_insensitive")
-  private Boolean isInsensitive = null;
-
-  @JsonProperty("is_inbox_tag")
-  private Boolean isInboxTag = null;
-
->>>>>>>> Stashed changes:SWKOM2023-main/src/main/java/io/swagger/model/DocTag.java
   @JsonProperty("document_count")
   private Long documentCount = null;
 

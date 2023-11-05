@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.threeten.bp.OffsetDateTime;
 import org.springframework.validation.annotation.Validated;
+
+import javax.annotation.Generated;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
 
@@ -13,12 +15,7 @@ import javax.validation.constraints.*;
  * NewCorrespondent
  */
 @Validated
-<<<<<<<< Updated upstream:spring-server-generated/src/main/java/io/swagger/model/NewCorrespondent.java
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-09-25T10:52:03.827974241Z[GMT]")
-========
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-10-24T13:29:17.597026669Z[GMT]")
->>>>>>>> Stashed changes:SWKOM2023-main/src/main/java/io/swagger/model/NewCorrespondent.java
-
+@Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2023-09-25T10:52:03.827974241Z[GMT]")
 
 public class NewCorrespondent   {
   @JsonProperty("name")
