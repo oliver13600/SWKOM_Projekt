@@ -20,7 +20,7 @@ import javax.annotation.Generated;
  */
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2023-10-28T04:11:48.156534Z[Etc/UTC]")
-public class CorrespondentDTO {
+public class Correspondent {
 
   private Long id;
 
