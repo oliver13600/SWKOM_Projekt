@@ -39,7 +39,7 @@ public class Correspondent {
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
   private OffsetDateTime lastCorrespondence;
 
-  public CorrespondentDTO id(Long id) {
+  public Correspondent id(Long id) {
     this.id = id;
     return this;
   }
@@ -59,7 +59,7 @@ public class Correspondent {
     this.id = id;
   }
 
-  public CorrespondentDTO slug(String slug) {
+  public Correspondent slug(String slug) {
     this.slug = JsonNullable.of(slug);
     return this;
   }
@@ -79,7 +79,7 @@ public class Correspondent {
     this.slug = slug;
   }
 
-  public CorrespondentDTO name(String name) {
+  public Correspondent name(String name) {
     this.name = JsonNullable.of(name);
     return this;
   }
@@ -99,7 +99,7 @@ public class Correspondent {
     this.name = name;
   }
 
-  public CorrespondentDTO match(String match) {
+  public Correspondent match(String match) {
     this.match = JsonNullable.of(match);
     return this;
   }
@@ -119,7 +119,7 @@ public class Correspondent {
     this.match = match;
   }
 
-  public CorrespondentDTO matchingAlgorithm(Long matchingAlgorithm) {
+  public Correspondent matchingAlgorithm(Long matchingAlgorithm) {
     this.matchingAlgorithm = matchingAlgorithm;
     return this;
   }
@@ -139,7 +139,7 @@ public class Correspondent {
     this.matchingAlgorithm = matchingAlgorithm;
   }
 
-  public CorrespondentDTO isInsensitive(Boolean isInsensitive) {
+  public Correspondent isInsensitive(Boolean isInsensitive) {
     this.isInsensitive = isInsensitive;
     return this;
   }
@@ -159,7 +159,7 @@ public class Correspondent {
     this.isInsensitive = isInsensitive;
   }
 
-  public CorrespondentDTO documentCount(Long documentCount) {
+  public Correspondent documentCount(Long documentCount) {
     this.documentCount = documentCount;
     return this;
   }
@@ -179,7 +179,7 @@ public class Correspondent {
     this.documentCount = documentCount;
   }
 
-  public CorrespondentDTO lastCorrespondence(OffsetDateTime lastCorrespondence) {
+  public Correspondent lastCorrespondence(OffsetDateTime lastCorrespondence) {
     this.lastCorrespondence = lastCorrespondence;
     return this;
   }
@@ -207,7 +207,7 @@ public class Correspondent {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CorrespondentDTO correspondentDTO = (CorrespondentDTO) o;
+    Correspondent correspondentDTO = (Correspondent) o;
     return Objects.equals(this.id, correspondentDTO.id) &&
         equalsNullable(this.slug, correspondentDTO.slug) &&
         equalsNullable(this.name, correspondentDTO.name) &&
