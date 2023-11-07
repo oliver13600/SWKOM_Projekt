@@ -1,4 +1,4 @@
-version: "1.0"
+version: "3.0"
 services:
   frontend:
     image: paperless:nginx
@@ -13,7 +13,7 @@ services:
     ports:
       - "8088:8088"
   persistence:
-    image: postgres
+    image: postgres:latest
     restart: always
     ports:
       - "5432:5432"
