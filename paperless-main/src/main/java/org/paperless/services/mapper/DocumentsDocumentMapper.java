@@ -1,4 +1,4 @@
-package org.paperless.mapper;
+package org.paperless.services.mapper;
 
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;

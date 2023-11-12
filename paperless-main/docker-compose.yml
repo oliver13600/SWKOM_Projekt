@@ -12,6 +12,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8088:8088"
+    depends_on:
+      - rabbitmq  # Make sure backend starts after RabbitMQ
   persistence:
     image: postgres:latest
     restart: always
@@ -23,5 +25,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: paperless_db
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"  # RabbitMQ management console
+      - "5672:5672"    # RabbitMQ default port
+    environment:
+      RABBITMQ_DEFAULT_USER: mquser
+      RABBITMQ_DEFAULT_PASS: mqpassword
+
 volumes:
   paperless_data:

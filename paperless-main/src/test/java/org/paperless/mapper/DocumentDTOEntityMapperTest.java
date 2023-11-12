@@ -10,6 +10,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.paperless.model.Document;
 import org.paperless.persistence.entities.*;
 import org.paperless.persistence.repositories.*;
+import org.paperless.services.mapper.DocumentsDocumentMapper;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
