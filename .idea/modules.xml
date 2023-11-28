@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/paperless.iml" filepath="$PROJECT_DIR$/paperless.iml" />
+      <module fileurl="file://$PROJECT_DIR$/spring-server-generated/swagger-spring.iml" filepath="$PROJECT_DIR$/spring-server-generated/swagger-spring.iml" />
     </modules>
   </component>
 </project>
