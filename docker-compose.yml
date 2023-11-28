@@ -25,6 +25,10 @@ services:
         condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - TESSERACT_DATAPATH=/usr/share/tesseract-ocr/4.00/tessdata # Adjust this path as needed
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ocrdata:/ocrdata
 
   postgres:
     image: postgres:latest
@@ -64,3 +68,12 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=paperless
       - RABBITMQ_DEFAULT_PASS=paperless
+
+  tesseract:
+    image: franky1/tesseract
+    container_name: paperless-tesseract
+    volumes:
+      - ocrdata:/ocrdata
+
+volumes:
+  ocrdata: {}
