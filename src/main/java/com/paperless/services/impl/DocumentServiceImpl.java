@@ -83,8 +83,8 @@ public class DocumentServiceImpl implements DocumentService {
         // Convert DTO to entity
         Document documentToBeSaved = documentMapper.dtoToEntity(documentDTO);
         documentToBeSaved.setChecksum("checksum"); // Consider generating a real checksum
-        documentToBeSaved.setStorageType("jpeg"); // Ensure this is correct
-        documentToBeSaved.setMimeType("application/jpeg"); // Use MIME type for PDF
+        documentToBeSaved.setStorageType("png"); // Ensure this is correct
+        documentToBeSaved.setMimeType("application/png"); // Use MIME type for PDF
         log.info("Document entity created.");
 
         // Generate object name and upload to MinIO
@@ -110,6 +110,9 @@ public class DocumentServiceImpl implements DocumentService {
             StoragePath pathToFile = new StoragePath();
             pathToFile.setPath(minioPath);
             pathToFile.setName(file.getOriginalFilename());
+            pathToFile.setIsInsensitive(false); // Set a default value for isInsensitive
+            pathToFile.setMatch("defaultMatchValue"); // Set a default value for match
+            pathToFile.setMatchingAlgorithm(1); // Set a default value for matchingAlgorithm
             documentToBeSaved.setStoragePath(pathToFile);
             log.info("Document storage path set.");
 

@@ -30,7 +30,7 @@ public class StoragePath {
     @Column(nullable = false)
     private Integer matchingAlgorithm;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Boolean isInsensitive;
 
     @Column(nullable = false, length = 512)
