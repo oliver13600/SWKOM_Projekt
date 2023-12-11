@@ -1,9 +1,9 @@
 # Use a Debian-based image with Java pre-installed
 FROM openjdk:17-jdk-slim
 
-# Update package list and install Maven and Tesseract OCR
+# Update package list and install Maven, Tesseract OCR, and German language pack for Tesseract
 RUN apt-get update && \
-    apt-get install -y maven tesseract-ocr && \
+    apt-get install -y maven tesseract-ocr tesseract-ocr-deu && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container

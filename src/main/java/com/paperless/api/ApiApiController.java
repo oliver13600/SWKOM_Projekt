@@ -65,6 +65,11 @@ public class ApiApiController implements ApiApi {
                 return ResponseEntity.badRequest().build();
             }
 
+            String[] fileExtension = name.split("\\.");
+            if(!fileExtension[fileExtension.length-1].equalsIgnoreCase("pdf")){
+                return new ResponseEntity<>(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+            }
+
             documentServiceImpl.uploadDocument(documentDTO, file);
             return new ResponseEntity<>(HttpStatus.CREATED);
 

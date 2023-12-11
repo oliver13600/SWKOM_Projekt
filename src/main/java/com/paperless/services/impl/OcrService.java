@@ -44,19 +44,13 @@ public class OcrService {
                             .build());
 
             // Save the stream to a temporary file
-            File tempFile = File.createTempFile("ocr_", ".png");
+            File tempFile = File.createTempFile("ocr_", ".pdf");
             Files.copy(fileStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            // java.lang.UnsatisfiedLinkError: Unable to load library 'tesseract':
-            //paperless-api        | libtesseract.so: cannot open shared object file: No such file or directory
-            //paperless-api        | libtesseract.so: cannot open shared object file: No such file or directory
-            //egy dll kell a libtesseract.so-hoz de hianyzik
 
-            //is_sesnsitive hibas a storagepathban, nem lehet null
-            //1. megoldas, adatbazisban kitorolni a constraintet
-            //2. megoldas, mikor elmentem legyen az is_sensitive kitoltve (true vagy false)
 
             // Perform OCR on the temporary file
             String ocrResult = doOcr(tempFile);
+            log.info("OCR-Result: " + ocrResult);
 
             // Send OCR result to RabbitMQ queue
             rabbitTemplate.convertAndSend(OCR_DOCUMENT_OUT_QUEUE_NAME, ocrResult);
@@ -74,7 +68,7 @@ public class OcrService {
 
         Tesseract tesseract = new Tesseract(); // create a new instance of Tesseract
         tesseract.setDatapath(tessDataPath); // set the tessdata path
-
+        tesseract.setLanguage("deu");
         // Perform OCR on the image
         return tesseract.doOCR(imageFile);
     }
