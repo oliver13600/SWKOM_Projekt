@@ -18,4 +18,8 @@ public interface DocumentService {
     ResponseEntity<GetDocuments200Response> getDocuments(Integer page, Integer pageSize, String query, String ordering, List<Integer> tagsIdAll, Integer documentTypeId, Integer storagePathIdIn, Integer correspondentId, Boolean truncateContent);
 
     ResponseEntity<UpdateDocument200Response> updateDocument(Integer id, UpdateDocumentRequest updateDocumentRequest);
+
+    void sendDocumentToDB(String minioPath, String OCRText);
+
+    DocumentDTO getDocumentById(Integer id);
 }

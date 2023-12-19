@@ -827,7 +827,7 @@ public interface ApiApi {
     /**
      * GET /api/documents/{id}/preview/
      *
-     * @param id  (required)
+     * @param id (required)
      * @return Success (status code 200)
      */
     @Operation(
@@ -844,7 +844,7 @@ public interface ApiApi {
         value = "/api/documents/{id}/preview/",
         produces = { "application/pdf" }
     )
-    default ResponseEntity<org.springframework.core.io.Resource> getDocumentPreview(
+    default ResponseEntity<String> getDocumentPreview( // war vorher org.springframework.core.io.Resource
         @Parameter(name = "id", description = "", required = true, in = ParameterIn.PATH) @PathVariable("id") Integer id
     ) {
         return new ResponseEntity<>(HttpStatus.OK);

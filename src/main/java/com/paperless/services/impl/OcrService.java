@@ -32,6 +32,9 @@ public class OcrService {
     private String tessDataPath;
     private static final String OCR_DOCUMENT_OUT_QUEUE_NAME = "OCR_DOCUMENT_OUT";
 
+    @Autowired
+    private DocumentService documentService;
+
 
 
     public void processDocument(String minioPath) {
@@ -49,6 +52,8 @@ public class OcrService {
 
             // Perform OCR on the temporary file
             String ocrResult = doOcr(tempFile);
+
+            documentService.sendDocumentToDB(minioPath, ocrResult);
 
             // Send OCR result to RabbitMQ queue
             rabbitTemplate.convertAndSend(OCR_DOCUMENT_OUT_QUEUE_NAME, ocrResult);

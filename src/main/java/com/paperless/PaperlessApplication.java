@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
@@ -19,6 +20,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 )
 @EnableJpaRepositories(
   basePackages = "com.paperless.persistence.repositories"
+)
+@EnableElasticsearchRepositories(
+  basePackages = "com.paperless.persistence.esrepositories"
 )
 public class PaperlessApplication {
 
