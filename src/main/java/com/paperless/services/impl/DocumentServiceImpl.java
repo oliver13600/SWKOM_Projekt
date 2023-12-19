@@ -156,6 +156,26 @@ public class DocumentServiceImpl implements DocumentService {
         return ResponseEntity.ok(updateDocument200Response);
     }
 
+    @Override
+    public void sendDocumentToDB(String minioPath, String OCRText) {
+        //setContent of document
+        Document document = documentRepository.findByStoragePath_Path(minioPath);
+        if(document == null){
+            log.error("Document not found.");
+        }
+        else {
+            log.info("Document found.");
+            document.setContent(OCRText);
+            documentRepository.save(document);
+            if(document.getContent() != null){
+                log.info("Document content set.");
+            }
+            else {
+                log.error("Document content not set.");
+            }
+        }
+    }
+
     private String generateRandomName() {
         return UUID.randomUUID().toString();
     }
@@ -165,4 +185,17 @@ public class DocumentServiceImpl implements DocumentService {
         return (lastDotIndex != -1) ? filename.substring(lastDotIndex) : "";
     }
 
+    @Override
+    public DocumentDTO getDocumentById(Integer id) {
+        // Retrieve the document entity by ID
+        Document document = documentRepository.findById(id).orElse(null);
+
+        // Check if the document entity is found
+        if (document == null) {
+            return null;
+        }
+
+        // Map the document entity to a DTO and return it
+        return documentMapper.entityToDto(document);
+    }
 }

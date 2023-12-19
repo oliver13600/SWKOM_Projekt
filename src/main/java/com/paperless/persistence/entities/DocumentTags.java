@@ -3,6 +3,7 @@ package com.paperless.persistence.entities;
 import javax.persistence.*;
 
 @Entity
+
 public class DocumentTags {
 
     @Id

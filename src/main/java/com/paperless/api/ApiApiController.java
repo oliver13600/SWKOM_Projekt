@@ -85,4 +85,34 @@ public class ApiApiController implements ApiApi {
         return documentServiceImpl.updateDocument(id, updateDocumentRequest);
     }
 
+    @Override
+    public ResponseEntity<String> getDocumentPreview(Integer id) {
+        try {
+            // Retrieve the document by ID
+            DocumentDTO document = documentServiceImpl.getDocumentById(id);
+            if (document == null || document.getContent() == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Extract a preview of the content
+            String contentPreview = extractContentPreview(document.getContent().orElse(""));
+
+            // Return the preview content
+            return ResponseEntity.ok(contentPreview);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private String extractContentPreview(String content) {
+        // Define the preview length
+        int previewLength = 100; // or any other logic to determine the preview size
+
+        // Return a substring of the content based on the preview length
+        return content.length() > previewLength ? content.substring(0, previewLength) : content;
+    }
+
+
+
 }
