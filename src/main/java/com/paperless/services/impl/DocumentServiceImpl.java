@@ -1,5 +1,7 @@
 package com.paperless.services.impl;
 
+import com.paperless.elasticsearch.ElasticSearchRepository;
+import com.paperless.elasticsearch.EsDocument;
 import com.paperless.persistence.entities.Document;
 import com.paperless.persistence.entities.StoragePath;
 import com.paperless.persistence.repositories.DocumentRepository;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -52,6 +55,9 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Value("${minio.bucketName}")
     private String bucketName;
+    @Autowired
+    private ElasticSearchRepository elasticSearchRepository;
+
 
 
     @Autowired
@@ -83,8 +89,8 @@ public class DocumentServiceImpl implements DocumentService {
         // Convert DTO to entity
         Document documentToBeSaved = documentMapper.dtoToEntity(documentDTO);
         documentToBeSaved.setChecksum("checksum"); // Consider generating a real checksum
-        documentToBeSaved.setStorageType("jpeg"); // Ensure this is correct
-        documentToBeSaved.setMimeType("application/jpeg"); // Use MIME type for PDF
+        documentToBeSaved.setStorageType("pdf"); // Ensure this is correct
+        documentToBeSaved.setMimeType("application/pdf"); // Use MIME type for PDF
         log.info("Document entity created.");
 
         // Generate object name and upload to MinIO
@@ -110,24 +116,57 @@ public class DocumentServiceImpl implements DocumentService {
             StoragePath pathToFile = new StoragePath();
             pathToFile.setPath(minioPath);
             pathToFile.setName(file.getOriginalFilename());
+            pathToFile.setIsInsensitive(false); // Set a default value for isInsensitive
+            pathToFile.setMatch("defaultMatchValue"); // Set a default value for match
+            pathToFile.setMatchingAlgorithm(1); // Set a default value for matchingAlgorithm
             documentToBeSaved.setStoragePath(pathToFile);
             log.info("Document storage path set.");
 
             // Save document entity
-            documentRepository.save(documentToBeSaved);
+            //documentRepository.save(documentToBeSaved);
+            Document savedDocument = documentRepository.save(documentToBeSaved);
+            indexDocument(savedDocument);
             log.info("Document saved and added to Queue for OCR processing.");
         } catch (Exception e) {
             log.error("Error while uploading file to Minio or sending to queue.", e);
             throw new RuntimeException("Failed to upload file to Minio or send to OCR queue", e);
         }
     }
+    public List<DocumentDTO> searchDocuments(String query) {
+        List<EsDocument> searchResults = elasticSearchRepository.search(query);
+        log.info("Search results: " + searchResults);
+        return searchResults.stream()
+                .map(this::convertToDocumentDTO)
+                .collect(Collectors.toList());
+    }
+
+    private DocumentDTO convertToDocumentDTO(EsDocument esDocument) {
+        // Assuming you have a constructor or setter methods to set properties
+        DocumentDTO documentDTO = new DocumentDTO();
+        documentDTO.setTitle(JsonNullable.of(esDocument.getTitle()));
+        documentDTO.setContent(JsonNullable.of(esDocument.getContent()));
+        // Set other properties as needed
+        return documentDTO;
+    }
 
     @Override
     public ResponseEntity<GetDocuments200Response> getDocuments(Integer page, Integer pageSize, String query, String ordering, List<Integer> tagsIdAll, Integer documentTypeId, Integer storagePathIdIn, Integer correspondentId, Boolean truncateContent) {
         List<DocumentDTO> documentDTOS = new ArrayList<>();
-        for (Document document : documentRepository.findAll()) {
-            documentDTOS.add(documentMapper.entityToDto(document));
+
+        log.info("Query String: -----------------------------------> " + query);
+
+        if(query == null) {
+            for (Document document : documentRepository.findAll()) {
+                documentDTOS.add(documentMapper.entityToDto(document));
+            }
+        } else if(query.isEmpty()){
+            for (Document document : documentRepository.findAll()) {
+                documentDTOS.add(documentMapper.entityToDto(document));
+            }
+        } else { // ElasticSearch
+            documentDTOS = searchDocuments(query);
         }
+
 
 
         GetDocuments200Response sampleResponse = new GetDocuments200Response();
@@ -185,6 +224,23 @@ public class DocumentServiceImpl implements DocumentService {
         return (lastDotIndex != -1) ? filename.substring(lastDotIndex) : "";
     }
 
+    public void indexDocument(Document document) {
+        EsDocument esDocument = convertToEsDocument(document);
+        log.info("Indexing document: " + esDocument);
+        elasticSearchRepository.save(esDocument);
+    }
+
+    private EsDocument convertToEsDocument(Document document) {
+        EsDocument esDocument = new EsDocument();
+        esDocument.setId(document.getId());
+        esDocument.setTitle(document.getTitle());
+        esDocument.setContent(document.getContent()); // Assuming you have a content field
+        // Map other fields as necessary
+        log.info("Converted document to ES document: " + esDocument);
+        return esDocument;
+    }
+
+
     @Override
     public DocumentDTO getDocumentById(Integer id) {
         // Retrieve the document entity by ID
@@ -198,4 +254,12 @@ public class DocumentServiceImpl implements DocumentService {
         // Map the document entity to a DTO and return it
         return documentMapper.entityToDto(document);
     }
+
+    @Override
+    public void setBucketName(String s) {
+        bucketName = s;
+
+    }
+
+
 }

@@ -1,5 +1,6 @@
 package com.paperless.persistence.entities;
 
+import com.paperless.elasticsearch.EsDocument;
 import com.paperless.services.dto.UpdateDocumentRequest;
 import lombok.Getter;
 import lombok.Setter;
@@ -109,5 +110,6 @@ public class Document {
         setArchivedFileName(update.getArchivedFileName());
         setOriginalFileName(update.getOriginalFileName());
     }
+
 
 }

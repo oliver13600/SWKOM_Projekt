@@ -32,10 +32,9 @@ public class OcrService {
     private String tessDataPath;
     private static final String OCR_DOCUMENT_OUT_QUEUE_NAME = "OCR_DOCUMENT_OUT";
 
-    @Autowired
-    private DocumentService documentService;
-
-
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
 
     public void processDocument(String minioPath) {
         try {
@@ -47,13 +46,13 @@ public class OcrService {
                             .build());
 
             // Save the stream to a temporary file
-            File tempFile = File.createTempFile("ocr_", ".tmp");
+            File tempFile = File.createTempFile("ocr_", ".pdf");
             Files.copy(fileStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
 
             // Perform OCR on the temporary file
             String ocrResult = doOcr(tempFile);
-
-            documentService.sendDocumentToDB(minioPath, ocrResult);
+            log.info("OCR-Result: " + ocrResult);
 
             // Send OCR result to RabbitMQ queue
             rabbitTemplate.convertAndSend(OCR_DOCUMENT_OUT_QUEUE_NAME, ocrResult);
@@ -67,9 +66,11 @@ public class OcrService {
     }
 
     public String doOcr(File imageFile) throws TesseractException {
+        log.info("Performing OCR on file: " + imageFile.getAbsolutePath());
+
         Tesseract tesseract = new Tesseract(); // create a new instance of Tesseract
         tesseract.setDatapath(tessDataPath); // set the tessdata path
-
+        tesseract.setLanguage("deu");
         // Perform OCR on the image
         return tesseract.doOCR(imageFile);
     }

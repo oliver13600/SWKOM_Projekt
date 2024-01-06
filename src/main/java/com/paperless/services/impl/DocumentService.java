@@ -1,5 +1,7 @@
 package com.paperless.services.impl;
 
+import com.paperless.elasticsearch.EsDocument;
+import com.paperless.persistence.entities.Document;
 import com.paperless.services.dto.DocumentDTO;
 import com.paperless.services.dto.GetDocument200Response;
 import com.paperless.services.dto.GetDocuments200Response;
@@ -22,4 +24,8 @@ public interface DocumentService {
     void sendDocumentToDB(String minioPath, String OCRText);
 
     DocumentDTO getDocumentById(Integer id);
+
+    void setBucketName(String s);
+
+    void indexDocument(Document document);
 }

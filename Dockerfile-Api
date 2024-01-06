@@ -1,21 +1,25 @@
-#FROM openjdk:19-alpine
-FROM maven:3.9.5-amazoncorretto-21
+# Use a Debian-based image with Java pre-installed
+FROM openjdk:17-jdk-slim
 
-# Working directory in the container
+# Update package list and install Maven, Tesseract OCR, and German language pack for Tesseract
+RUN apt-get update && \
+    apt-get install -y maven tesseract-ocr tesseract-ocr-deu && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set the working directory in the container
 WORKDIR /app
 
-# We copy the entire app
-COPY src /app/src/
+# Copy the Maven project files
 COPY pom.xml /app/pom.xml
-#COPY mvnw /app/mvnw
-#COPY .mvn /app/.mvn/
 
-# Build the jar file
-#RUN ./mvnw package
+# Copy the source code
+COPY src /app/src/
+
+# Build the project
 RUN mvn clean package
 
-# Expose port 8080
+# Expose the port the app runs on
 EXPOSE 8080
 
-# Run the jar file
+# Command to run the app
 CMD ["java", "-jar", "target/paperless-1.0.jar"]
