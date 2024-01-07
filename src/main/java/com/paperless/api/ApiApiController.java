@@ -1,21 +1,21 @@
 package com.paperless.api;
 
 
-import com.paperless.services.dto.DocumentDTO;
-import com.paperless.services.dto.GetDocument200Response;
-import com.paperless.services.dto.GetDocuments200Response;
-import com.paperless.services.dto.UpdateDocument200Response;
-import com.paperless.services.dto.UpdateDocumentRequest;
+import com.paperless.services.dto.*;
 import com.paperless.services.impl.DocumentServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Generated;
+import javax.validation.Valid;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +24,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 
 @Generated(value = "com.paperless.codegen.languages.SpringCodegen", date = "2023-10-22T12:32:07.613318Z[Etc/UTC]")
 @Controller
+@Slf4j
 @RequestMapping("${openapi.paperlessRestServer.base-path:}")
 public class ApiApiController implements ApiApi {
     private final DocumentServiceImpl documentServiceImpl;
@@ -116,6 +117,36 @@ public class ApiApiController implements ApiApi {
 
         // Return a substring of the content based on the preview length
         return content.length() > previewLength ? content.substring(0, previewLength) : content;
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteDocument(Integer id) {
+        try {
+            log.info("deleteDocument at id ------------------------->" + id );
+            documentServiceImpl.deleteDocument(id);
+            return new ResponseEntity<>(HttpStatus.OK); // 204 No Content
+        } catch (Exception e) {
+            log.error("Error deleting documents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteCorrespondent(Integer id) {
+        try {
+            log.info("deleteCorespondent at id ------------------------->" + id );
+            documentServiceImpl.deleteDocument(id);
+            return new ResponseEntity<>(HttpStatus.OK); // 204 No Content
+        } catch (Exception e) {
+            log.error("Error deleting documents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<SelectionData200Response> selectionData(@Valid @RequestBody(required = false) SelectionDataRequest selectionDataRequest) {
+        log.info("SelectionData CALLED: " + selectionDataRequest.toString());
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 

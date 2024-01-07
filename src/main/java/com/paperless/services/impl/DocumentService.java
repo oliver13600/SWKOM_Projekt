@@ -28,4 +28,6 @@ public interface DocumentService {
     void setBucketName(String s);
 
     void indexDocument(Document document);
+
+    void deleteDocument(Integer id);
 }

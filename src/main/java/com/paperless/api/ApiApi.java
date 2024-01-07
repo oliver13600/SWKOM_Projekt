@@ -501,6 +501,7 @@ public interface ApiApi {
      *
      * @param id  (required)
      * @return Success (status code 204)
+     * @return Success (status code 204)
      */
     @Operation(
         operationId = "deleteCorrespondent",

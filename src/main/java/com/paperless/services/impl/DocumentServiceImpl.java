@@ -1,5 +1,7 @@
 package com.paperless.services.impl;
 
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import com.paperless.elasticsearch.ElasticSearchRepository;
 import com.paperless.elasticsearch.EsDocument;
 import com.paperless.persistence.entities.Document;
@@ -15,27 +17,24 @@ import com.paperless.services.mapper.GetDocument200ResponseMapper;
 import com.paperless.services.mapper.UpdateDocument200ResponseMapper;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.errors.*;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,15 +52,14 @@ public class DocumentServiceImpl implements DocumentService {
 
     private final OcrService ocrService;
 
+    private final ElasticSearchRepository elasticSearchRepository;
+
     @Value("${minio.bucketName}")
     private String bucketName;
-    @Autowired
-    private ElasticSearchRepository elasticSearchRepository;
-
 
 
     @Autowired
-    public DocumentServiceImpl(DocumentRepository documentRepository, DocumentMapper documentMapper, GetDocument200ResponseMapper getDocument200ResponseMapper, UpdateDocument200ResponseMapper updateDocument200ResponseMapper, MinioClient minioClient, RabbitMQSender rabbitMQSender, OcrService ocrService){
+    public DocumentServiceImpl(DocumentRepository documentRepository, DocumentMapper documentMapper, GetDocument200ResponseMapper getDocument200ResponseMapper, UpdateDocument200ResponseMapper updateDocument200ResponseMapper, MinioClient minioClient, RabbitMQSender rabbitMQSender, OcrService ocrService, ElasticSearchRepository elasticSearchRepository){
         this.documentRepository = documentRepository;
         this.documentMapper = documentMapper;
         this.getDocument200ResponseMapper = getDocument200ResponseMapper;
@@ -69,6 +67,7 @@ public class DocumentServiceImpl implements DocumentService {
         this.minioClient = minioClient;
         this.rabbitMQSender = rabbitMQSender;
         this.ocrService = ocrService;
+        this.elasticSearchRepository = elasticSearchRepository;
     }
 
     @Override
@@ -89,6 +88,16 @@ public class DocumentServiceImpl implements DocumentService {
         // Convert DTO to entity
         Document documentToBeSaved = documentMapper.dtoToEntity(documentDTO);
         documentToBeSaved.setChecksum("checksum"); // Consider generating a real checksum
+
+        try {
+            String pdfContent = readPdfFile(file);
+            documentToBeSaved.setContent(pdfContent);
+            log.info("PDF content: "+ pdfContent + " read and set in DocumentDTO.");
+        } catch (Exception e) {
+            log.error("Error while reading PDF content.", e);
+            throw new RuntimeException("Failed to read PDF content", e);
+        }
+
         documentToBeSaved.setStorageType("pdf"); // Ensure this is correct
         documentToBeSaved.setMimeType("application/pdf"); // Use MIME type for PDF
         log.info("Document entity created.");
@@ -132,6 +141,20 @@ public class DocumentServiceImpl implements DocumentService {
             throw new RuntimeException("Failed to upload file to Minio or send to OCR queue", e);
         }
     }
+
+    private String readPdfFile(MultipartFile file) throws IOException {
+        try (InputStream inputStream = file.getInputStream()) {
+            PdfReader reader = new PdfReader(inputStream);
+            StringBuilder content = new StringBuilder();
+
+            for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+                content.append(PdfTextExtractor.getTextFromPage(reader, i));
+            }
+
+            return content.toString();
+        }
+    }
+
     public List<DocumentDTO> searchDocuments(String query) {
         List<EsDocument> searchResults = elasticSearchRepository.search(query);
         log.info("Search results: " + searchResults);
@@ -154,7 +177,7 @@ public class DocumentServiceImpl implements DocumentService {
         List<DocumentDTO> documentDTOS = new ArrayList<>();
 
         log.info("Query String: -----------------------------------> " + query);
-
+        log.info("Page: " + page + " PageSize: " + pageSize + " Ordering: " + ordering);
         if(query == null) {
             for (Document document : documentRepository.findAll()) {
                 documentDTOS.add(documentMapper.entityToDto(document));
@@ -167,10 +190,8 @@ public class DocumentServiceImpl implements DocumentService {
             documentDTOS = searchDocuments(query);
         }
 
-
-
         GetDocuments200Response sampleResponse = new GetDocuments200Response();
-        sampleResponse.setCount(100);
+        sampleResponse.setCount(documentDTOS.size());
         sampleResponse.setNext(1);
         sampleResponse.setPrevious(1);
         sampleResponse.addAllItem(1);
@@ -181,6 +202,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         return ResponseEntity.ok(sampleResponse);
     }
+
 
     @Override
     public ResponseEntity<UpdateDocument200Response> updateDocument(Integer id, UpdateDocumentRequest updateDocumentRequest) {
@@ -230,6 +252,7 @@ public class DocumentServiceImpl implements DocumentService {
         elasticSearchRepository.save(esDocument);
     }
 
+
     private EsDocument convertToEsDocument(Document document) {
         EsDocument esDocument = new EsDocument();
         esDocument.setId(document.getId());
@@ -239,7 +262,6 @@ public class DocumentServiceImpl implements DocumentService {
         log.info("Converted document to ES document: " + esDocument);
         return esDocument;
     }
-
 
     @Override
     public DocumentDTO getDocumentById(Integer id) {
@@ -261,5 +283,42 @@ public class DocumentServiceImpl implements DocumentService {
 
     }
 
+    @Override
+    public void deleteDocument(Integer id) {
+        // Check if the document exists
+        Optional<Document> documentOptional = documentRepository.findById(id);
+        if (!documentOptional.isPresent()) {
+            log.error("Document not found with ID: " + id);
+            throw new RuntimeException("Document not found with ID: " + id);
+        }
+
+        Document document = documentOptional.get();
+
+        // Delete the document from MinIO
+        try {
+            String objectName = document.getStoragePath().getPath();
+            minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(objectName)
+                    .build());
+            log.info("Document deleted from MinIO with object name: " + objectName);
+        } catch (Exception e) {
+            log.error("Error while deleting document from MinIO", e);
+            // Handle the exception as needed
+        }
+
+        // Delete the document from Elasticsearch
+        try {
+            elasticSearchRepository.deleteById(document.getId());
+            log.info("Document deleted from Elasticsearch with ID: " + id);
+        } catch (Exception e) {
+            log.error("Error while deleting document from Elasticsearch", e);
+            // Handle the exception as needed
+        }
+
+        // Delete the document from the database
+        documentRepository.deleteById(id);
+        log.info("Document deleted from database with ID: " + id);
+    }
 
 }

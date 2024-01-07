@@ -23,6 +23,8 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      paperless-elasticsearch:
+        condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - TESSERACT_DATAPATH=/usr/share/tesseract-ocr/4.00/tessdata # Adjust this path as needed
