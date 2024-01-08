@@ -32,5 +32,7 @@ public interface DocumentService {
 
     void deleteDocument(Integer id);
 
+    Resource downloadDocument(Integer id);
+
     Resource getDocumentThumbnail(Integer id);
 }

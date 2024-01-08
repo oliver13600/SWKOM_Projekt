@@ -96,31 +96,25 @@ public class ApiApiController implements ApiApi {
     }
 
     @Override
-    public ResponseEntity<String> getDocumentPreview(Integer id) {
+    public ResponseEntity <org.springframework.core.io.Resource> getDocumentPreview(Integer id) {
+        log.info("Get Document-Preview with DocumentID " + id);
         try {
-            // Retrieve the document by ID
-            DocumentDTO document = documentServiceImpl.getDocumentById(id);
-            if (document == null || document.getContent() == null) {
+            Resource documentContent = documentServiceImpl.downloadDocument(id);
+
+            if (documentContent != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(documentContent);
+            } else {
+                // Return an appropriate error response
+                log.info("Could not fetch document content - using default response");
                 return ResponseEntity.notFound().build();
             }
-
-            // Extract a preview of the content
-            String contentPreview = extractContentPreview(document.getContent().orElse(""));
-
-            // Return the preview content
-            return ResponseEntity.ok(contentPreview);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            // Log the exception and return an appropriate error response
+            log.error("Error retrieving document content: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    private String extractContentPreview(String content) {
-        // Define the preview length
-        int previewLength = 100; // or any other logic to determine the preview size
-
-        // Return a substring of the content based on the preview length
-        return content.length() > previewLength ? content.substring(0, previewLength) : content;
     }
 
     @Override
@@ -157,7 +151,7 @@ public class ApiApiController implements ApiApi {
     public ResponseEntity<Resource> getDocumentThumb(Integer id) {
         try {
             Resource thumbnail = documentServiceImpl.getDocumentThumbnail(id);
-            if (thumbnail.exists()) {
+            if (thumbnail != null) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_PNG) // or the appropriate media type
                         .body(thumbnail);
@@ -175,6 +169,29 @@ public class ApiApiController implements ApiApi {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    @Override
+    public ResponseEntity<Resource> downloadDocument (Integer id, Boolean original){
+        log.info("Donwload selected original: " + original + " with DocumentID " + id);
+        try {
+            Resource documentContent = documentServiceImpl.downloadDocument(id);
+
+            if (documentContent != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(documentContent);
+            } else {
+                // Return an appropriate error response
+                log.info("Could not fetch document content - using default response");
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            // Log the exception and return an appropriate error response
+            log.error("Error retrieving document content: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
 
 
 }

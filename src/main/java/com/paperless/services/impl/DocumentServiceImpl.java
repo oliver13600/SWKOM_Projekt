@@ -300,13 +300,24 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public void deleteDocument(Integer id) {
         // Check if the document exists
-        Optional<Document> documentOptional = documentRepository.findById(id);
-        if (!documentOptional.isPresent()) {
-            log.error("Document not found with ID: " + id);
-            throw new RuntimeException("Document not found with ID: " + id);
+        Document document = documentRepository.findById(id).orElse(null);
+        EsDocument esDocument = elasticSearchRepository.findById(id).orElse(null);
+
+        if (document != null) {
+            // Delete the document from the database
+            documentRepository.deleteById(id);
+            log.info("Document deleted from database with ID: " + id);
+        } else {
+            log.error("Could not delete document from database with ID: " + id);
         }
 
-        Document document = documentOptional.get();
+        if(esDocument != null){
+            // Delete the document from elasticsearch
+            elasticSearchRepository.deleteById(id);
+            log.info("Document deleted from elasticsearch with ID: " + id);
+        } else {
+            log.error("Could not delete document in elasticsearch with ID: " + id);
+        }
 
         // Delete the document from MinIO
         try {
@@ -318,28 +329,16 @@ public class DocumentServiceImpl implements DocumentService {
             log.info("Document deleted from MinIO with object name: " + objectName);
         } catch (Exception e) {
             log.error("Error while deleting document from MinIO", e);
-            // Handle the exception as needed
         }
 
-        // Delete the document from Elasticsearch
-        try {
-            elasticSearchRepository.deleteById(document.getId());
-            log.info("Document deleted from Elasticsearch with ID: " + id);
-        } catch (Exception e) {
-            log.error("Error while deleting document from Elasticsearch", e);
-            // Handle the exception as needed
-        }
-
-        // Delete the document from the database
-        documentRepository.deleteById(id);
-        log.info("Document deleted from database with ID: " + id);
     }
+
     @Override
     public Resource getDocumentThumbnail(Integer id) {
-        try {
-            Document document = documentRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Document not found with ID: " + id));
 
+        Document document = documentRepository.findById(id).orElse(null);
+
+        if (document != null) {
             String documentPath = document.getStoragePath().getPath(); // Assuming this is the path to the PDF file in MinIO
 
             try (InputStream pdfStream = minioClient.getObject(GetObjectArgs.builder()
@@ -355,10 +354,46 @@ public class DocumentServiceImpl implements DocumentService {
                 ImageIO.write(image, "png", baos); // You can choose "jpeg" or "png" depending on your requirement
 
                 return new ByteArrayResource(baos.toByteArray());
+            } catch (Exception e) {
+                log.error("Error getting document from minio document thumbnail: ", e);
+                return null;
             }
-        } catch (Exception e) {
-            log.error("Error generating document thumbnail: ", e);
-            throw new RuntimeException("Failed to generate document thumbnail", e);
+        } else {
+            log.info("File not found in Minio - ID: " + id);
+            return null;
+        }
+
+    }
+    @Override
+    public Resource downloadDocument(Integer id) {
+        Document document = documentRepository.findById(id).orElse(null);
+
+        if (document != null) {
+            String documentPath = document.getStoragePath().getPath(); // Assuming this is the path to the PDF file in MinIO
+
+            try (InputStream pdfStream = minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(documentPath)
+                    .build())) {
+
+                // Read the PDF content into a byte array
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+
+                while ((bytesRead = pdfStream.read(buffer)) != -1) {
+                    baos.write(buffer, 0, bytesRead);
+                }
+
+                return new ByteArrayResource(baos.toByteArray());
+            } catch (Exception e) {
+                log.error("Error downloading document from MinIO: ", e);
+                return null;
+            }
+        } else {
+            log.info("File not found in Minio - ID: " + id);
+            return null;
         }
     }
+
 }
