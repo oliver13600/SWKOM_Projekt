@@ -15,20 +15,27 @@ import com.paperless.services.dto.UpdateDocumentRequest;
 import com.paperless.services.mapper.DocumentMapper;
 import com.paperless.services.mapper.GetDocument200ResponseMapper;
 import com.paperless.services.mapper.UpdateDocument200ResponseMapper;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.errors.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
@@ -207,10 +214,17 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public ResponseEntity<UpdateDocument200Response> updateDocument(Integer id, UpdateDocumentRequest updateDocumentRequest) {
         Document document = documentRepository.getReferenceById(id);
+        EsDocument esDocument = elasticSearchRepository.findById(id).orElse(null);
 
         document.updateByUpdateDocumentRequest(updateDocumentRequest);
 
+        if(esDocument != null){
+            esDocument.updateByUpdateEsDocumentRequest(updateDocumentRequest);
+            //elasticSearchRepository.deleteById(esDocument.getId());
+            elasticSearchRepository.save(esDocument);
+        }
         documentRepository.save(document);
+
 
         UpdateDocument200Response updateDocument200Response = updateDocument200ResponseMapper.entityToDto(document);
 
@@ -320,5 +334,31 @@ public class DocumentServiceImpl implements DocumentService {
         documentRepository.deleteById(id);
         log.info("Document deleted from database with ID: " + id);
     }
+    @Override
+    public Resource getDocumentThumbnail(Integer id) {
+        try {
+            Document document = documentRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Document not found with ID: " + id));
 
+            String documentPath = document.getStoragePath().getPath(); // Assuming this is the path to the PDF file in MinIO
+
+            try (InputStream pdfStream = minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(documentPath)
+                    .build());
+                 PDDocument pdDocument = PDDocument.load(pdfStream)) {
+
+                PDFRenderer renderer = new PDFRenderer(pdDocument);
+                BufferedImage image = renderer.renderImageWithDPI(0, 300); // Render the first page
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos); // You can choose "jpeg" or "png" depending on your requirement
+
+                return new ByteArrayResource(baos.toByteArray());
+            }
+        } catch (Exception e) {
+            log.error("Error generating document thumbnail: ", e);
+            throw new RuntimeException("Failed to generate document thumbnail", e);
+        }
+    }
 }

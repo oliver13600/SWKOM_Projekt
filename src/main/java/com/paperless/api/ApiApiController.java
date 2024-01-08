@@ -5,7 +5,10 @@ import com.paperless.services.dto.*;
 import com.paperless.services.impl.DocumentServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Generated;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -149,6 +153,28 @@ public class ApiApiController implements ApiApi {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @Override
+    public ResponseEntity<Resource> getDocumentThumb(Integer id) {
+        try {
+            Resource thumbnail = documentServiceImpl.getDocumentThumbnail(id);
+            if (thumbnail.exists()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG) // or the appropriate media type
+                        .body(thumbnail);
+            } else {
+                // Return default thumbnail
+                log.info("Could not fetch Pdf-Thumbnail - using default pdf thumbnail");
+                Resource defaultThumbnail = new ClassPathResource("pdficon.png");
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG)
+                        .body(defaultThumbnail);
+            }
+        } catch (Exception e) {
+            // Log the exception and return an appropriate error response
+            log.error("Error retrieving document thumbnail: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
 
 }
