@@ -3,21 +3,15 @@ package com.paperless.services.mapper;
 import com.paperless.persistence.entities.*;
 import com.paperless.persistence.repositories.*;
 import com.paperless.services.dto.DocumentDTO;
+import com.paperless.services.mapper.DocumentMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.openapitools.jackson.nullable.JsonNullable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mapstruct.factory.Mappers;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,10 +29,11 @@ class DocumentMapperTests {
     private StoragePathRepository storagePathRepository;
 
     @InjectMocks
-    private DocumentMapper documentMapper = new DocumentMapperImpl();
+    private DocumentMapper documentMapper = Mappers.getMapper(DocumentMapper.class);
 
-    public DocumentMapperTests() {
-        MockitoAnnotations.initMocks(this);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -59,12 +54,11 @@ class DocumentMapperTests {
 
         assertEquals(document.getTitle(), documentDTO.getTitle().get());
         assertEquals(document.getContent(), documentDTO.getContent().get());
-
     }
 
     @Test
     void documentMapperDtoToEntityTest() {
-
+        // Mocking repository behavior
         when(correspondentRepository.findById(1)).thenReturn(Optional.of(new Correspondent()));
         when(documentTypeRepository.findById(1)).thenReturn(Optional.of(new DocumentType()));
         when(storagePathRepository.findById(1)).thenReturn(Optional.of(new StoragePath()));
@@ -80,6 +74,5 @@ class DocumentMapperTests {
 
         assertEquals(documentDTO.getTitle().get(), document.getTitle());
         assertEquals(documentDTO.getContent().get(), document.getContent());
-
     }
 }

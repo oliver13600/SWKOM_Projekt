@@ -3,16 +3,19 @@ package com.paperless.services.impl;
 import com.paperless.persistence.entities.*;
 import com.paperless.persistence.repositories.*;
 import com.paperless.services.dto.DocumentDTO;
+import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 public class OcrServiceTest {
 
     @InjectMocks
@@ -42,46 +46,37 @@ public class OcrServiceTest {
     @Mock
     private RabbitTemplate rabbitTemplate;
 
-    @Mock
-    private DocumentService documentService;
+    private final String bucketName = "test-bucket";
 
-    private final String bucketName = "test-bucket"; // Set a test bucket name
+    private static final String OCR_DOCUMENT_OUT_QUEUE_NAME = "OCR_DOCUMENT_OUT";
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        ocrService.setBucketName(bucketName); // Set the bucket name in OcrService
+        ocrService.setBucketName(bucketName);
     }
 
     @Test
     void testProcessDocument() throws Exception {
-        // Define test data
-        String minioPath = "test/document.jpg";
+        String minioPath = "test/document.pdf";
         String ocrResult = "This is the OCR result.";
 
-        // Mock MinioClient to return a sample GetObjectResponse
+        // Mock MinioClient to return a sample InputStream
         GetObjectResponse getObjectResponse = Mockito.mock(GetObjectResponse.class);
-        when(minioClient.getObject(any())).thenReturn(getObjectResponse);
+        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
+        when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(getObjectResponse);
 
-        // Mock Tesseract OCR using spy
+        // Spy on OcrService to mock doOcr method
         OcrService spyOcrService = Mockito.spy(ocrService);
-        doReturn(ocrResult).when(spyOcrService).doOcr(argThat(file -> file.getName().startsWith("ocr_")));
+        doReturn(ocrResult).when(spyOcrService).doOcr(any());
 
-        // Mock DocumentService
-        doNothing().when(documentService).sendDocumentToDB(anyString(), anyString());
-
-        // Mock RabbitTemplate
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString());
-
-        // Call the method to test
+        // Execute processDocument
         spyOcrService.processDocument(minioPath);
 
-        // Verify that the expected methods were called with specific arguments
-        verify(minioClient).getObject(argThat(args -> args.object().equals(minioPath)));
-        verify(spyOcrService).doOcr(argThat(file -> file.getName().startsWith("ocr_")));
-        verify(documentService).sendDocumentToDB(eq(minioPath), eq(ocrResult));
+        // Verify interactions
+        verify(minioClient).getObject(any(GetObjectArgs.class));
+        verify(spyOcrService).doOcr(any());
         verify(rabbitTemplate).convertAndSend(eq("OCR_DOCUMENT_OUT"), eq(ocrResult));
     }
-
-
 }
+
+

@@ -8,7 +8,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -99,15 +102,19 @@ class ApiApiControllerTest {
     }
 
     @Test
-    void getDocumentPreview() {
-        DocumentDTO documentDTO = new DocumentDTO();
-        documentDTO.setContent(JsonNullable.of("Sample content for preview"));
-        when(documentServiceImpl.getDocumentById(anyInt())).thenReturn(documentDTO);
+    void testDownloadDocumentNotFound() {
+        // Mock data
+        Integer documentId = 1;
+        // Mock DocumentService response for not found
+        when(documentServiceImpl.downloadDocument(documentId)).thenReturn(null);
 
-        ResponseEntity<org.springframework.core.io.Resource> response = apiApiController.getDocumentPreview(1);
+        // Call the method to test
+        ResponseEntity<Resource> responseEntity = apiApiController.downloadDocument(documentId, false);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        //assertTrue(response.getBody().contains("Sample content"));
+        // Verify interactions
+        verify(documentServiceImpl, times(1)).downloadDocument(documentId);
+
+        // Verify the response
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
     }
 }

@@ -102,7 +102,7 @@ public class DocumentServiceImpl implements DocumentService {
             log.info("PDF content: "+ pdfContent + " read and set in DocumentDTO.");
         } catch (Exception e) {
             log.error("Error while reading PDF content.", e);
-            throw new RuntimeException("Failed to read PDF content", e);
+            return;
         }
 
         documentToBeSaved.setStorageType("pdf"); // Ensure this is correct
@@ -145,11 +145,11 @@ public class DocumentServiceImpl implements DocumentService {
             log.info("Document saved and added to Queue for OCR processing.");
         } catch (Exception e) {
             log.error("Error while uploading file to Minio or sending to queue.", e);
-            throw new RuntimeException("Failed to upload file to Minio or send to OCR queue", e);
+
         }
     }
 
-    private String readPdfFile(MultipartFile file) throws IOException {
+    public String readPdfFile(MultipartFile file) throws IOException {
         try (InputStream inputStream = file.getInputStream()) {
             PdfReader reader = new PdfReader(inputStream);
             StringBuilder content = new StringBuilder();

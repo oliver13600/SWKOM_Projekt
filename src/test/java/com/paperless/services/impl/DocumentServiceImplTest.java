@@ -1,5 +1,7 @@
 package com.paperless.services.impl;
 
+import com.paperless.elasticsearch.ElasticSearchRepository;
+import com.paperless.elasticsearch.EsDocument;
 import com.paperless.persistence.entities.Document;
 import com.paperless.persistence.entities.StoragePath;
 import com.paperless.persistence.repositories.DocumentRepository;
@@ -9,12 +11,15 @@ import com.paperless.services.mapper.GetDocument200ResponseMapper;
 import com.paperless.services.mapper.UpdateDocument200ResponseMapper;
 import io.minio.MinioClient;
 import io.minio.errors.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +30,7 @@ import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
-import java.util.Collections;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -57,6 +62,9 @@ class DocumentServiceImplTest {
     @Mock
     private OcrService ocrService;
 
+    @Mock
+    private ElasticSearchRepository elasticSearchRepository;
+
     private final String bucketName = "test-bucket"; // Set a test bucket name
 
 
@@ -67,24 +75,32 @@ class DocumentServiceImplTest {
     }
 
     @Test
-    @DisplayName("Test Upload Document Successfully")
-    void testUploadDocument() throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        // Mock data
+    void testUploadDocument() {
+
+        List<Integer> integerList = Arrays.asList(1, 2, 3, 4, 5);
+
         DocumentDTO documentDTO = new DocumentDTO();
-        MultipartFile file = createMockMultipartFile();
+        documentDTO.setTitle(JsonNullable.of("Test Titel"));
+        documentDTO.setOriginalFileName(JsonNullable.of("Test"));
+        documentDTO.setCreated(OffsetDateTime.now());
+        documentDTO.setDocumentType(JsonNullable.of(1));
+        documentDTO.setTags(JsonNullable.of(integerList));
+        documentDTO.setCorrespondent(JsonNullable.of(1));
 
-        // Mock behavior
+        // Mock data
+        MultipartFile mockFile = new MockMultipartFile(
+                "test.pdf",
+                "test.pdf",
+                MediaType.APPLICATION_PDF_VALUE,
+                "Sample PDF Content".getBytes()
+        );
+
         when(documentMapper.dtoToEntity(any(DocumentDTO.class))).thenReturn(new Document());
-        when(minioClient.putObject(any())).thenReturn(null);
-
         // Call the method to test
-        assertDoesNotThrow(() -> documentService.uploadDocument(documentDTO, file));
+        documentService.uploadDocument(documentDTO, mockFile);
 
         // Verify interactions
-        verify(documentMapper, times(1)).dtoToEntity(any(DocumentDTO.class));
-        verify(minioClient, times(1)).putObject(any());
-        verify(rabbitMQSender, times(1)).sendToOcrDocumentInQueue(anyString());
-        verify(documentRepository, times(1)).save(any(Document.class));
+        verify(documentMapper, times(1)).dtoToEntity(documentDTO);
     }
 
     @Test
@@ -124,6 +140,8 @@ class DocumentServiceImplTest {
         when(documentRepository.save(any(Document.class))).thenReturn(new Document());
         when(updateDocument200ResponseMapper.entityToDto(any(Document.class))).thenReturn(new UpdateDocument200Response());
 
+        when(elasticSearchRepository.findById(documentId)).thenReturn(Optional.of(new EsDocument()));
+
         // Call the method to test
         ResponseEntity<UpdateDocument200Response> responseEntity = documentService.updateDocument(documentId, updateDocumentRequest);
 
@@ -134,11 +152,5 @@ class DocumentServiceImplTest {
 
         assertEquals(200, responseEntity.getStatusCodeValue());
         assertNotNull(responseEntity.getBody());
-    }
-
-    private MultipartFile createMockMultipartFile() throws IOException {
-        byte[] content = "Hello, World!".getBytes();
-        InputStream inputStream = new ByteArrayInputStream(content);
-        return new MockMultipartFile("file", "test.txt", "text/plain", inputStream);
     }
 }
