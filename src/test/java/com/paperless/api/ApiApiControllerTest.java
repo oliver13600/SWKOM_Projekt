@@ -117,4 +117,20 @@ class ApiApiControllerTest {
         // Verify the response
         assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
     }
+
+    @Test
+    void PreviewDocumentError(){
+        // Mock data
+        Integer documentId = 1;
+        when(documentServiceImpl.downloadDocument(documentId)).thenThrow();
+
+        // Call the method to test
+        ResponseEntity<Resource> responseEntity = apiApiController.getDocumentPreview(documentId);
+
+        // Verify interactions
+        verify(documentServiceImpl, times(1)).downloadDocument(documentId);
+
+        // Verify the response
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+    }
 }
