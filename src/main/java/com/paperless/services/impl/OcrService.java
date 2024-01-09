@@ -38,6 +38,7 @@ public class OcrService {
 
     public void processDocument(String minioPath) {
         try {
+            log.info("Processing document: " + minioPath);
             // Fetch the document from MinIO
             InputStream fileStream = minioClient.getObject(
                     GetObjectArgs.builder()
@@ -71,6 +72,7 @@ public class OcrService {
         Tesseract tesseract = new Tesseract(); // create a new instance of Tesseract
         tesseract.setDatapath(tessDataPath); // set the tessdata path
         tesseract.setLanguage("deu");
+
         // Perform OCR on the image
         return tesseract.doOCR(imageFile);
     }

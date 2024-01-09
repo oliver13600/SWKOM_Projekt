@@ -63,6 +63,7 @@ public class ApiApiController implements ApiApi {
             documentDTO.setDocumentType(JsonNullable.of(documentType));
             documentDTO.setTags(JsonNullable.of(tags));
             documentDTO.setCorrespondent(JsonNullable.of(correspondent));
+            log.info("uploadDocument CALLED: " + documentDTO.toString());
 
             MultipartFile file = document.get(0);
 

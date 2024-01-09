@@ -160,23 +160,38 @@ public class DocumentServiceImpl implements DocumentService {
 
             return content.toString();
         }
+        catch (Exception e){
+            log.error("Error while reading PDF file.", e);
+            return null;
+        }
+
     }
 
     public List<DocumentDTO> searchDocuments(String query) {
-        List<EsDocument> searchResults = elasticSearchRepository.search(query);
+        try {List<EsDocument> searchResults = elasticSearchRepository.search(query);
         log.info("Search results: " + searchResults);
+
         return searchResults.stream()
                 .map(this::convertToDocumentDTO)
                 .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error while searching documents.", e);
+            return null;
+        }
     }
 
     private DocumentDTO convertToDocumentDTO(EsDocument esDocument) {
+        try{
         // Assuming you have a constructor or setter methods to set properties
         DocumentDTO documentDTO = new DocumentDTO();
         documentDTO.setTitle(JsonNullable.of(esDocument.getTitle()));
         documentDTO.setContent(JsonNullable.of(esDocument.getContent()));
         // Set other properties as needed
         return documentDTO;
+        } catch (Exception e) {
+            log.error("Error while converting ES document to DTO.", e);
+            return null;
+        }
     }
 
     @Override
@@ -198,6 +213,9 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         GetDocuments200Response sampleResponse = new GetDocuments200Response();
+        if (sampleResponse == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         sampleResponse.setCount(documentDTOS.size());
         sampleResponse.setNext(1);
         sampleResponse.setPrevious(1);
@@ -225,9 +243,12 @@ public class DocumentServiceImpl implements DocumentService {
         }
         documentRepository.save(document);
 
-
         UpdateDocument200Response updateDocument200Response = updateDocument200ResponseMapper.entityToDto(document);
-
+        //exception handling
+        if (updateDocument200Response == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        log.info("Document updated: " + document);
         return ResponseEntity.ok(updateDocument200Response);
     }
 
@@ -239,7 +260,7 @@ public class DocumentServiceImpl implements DocumentService {
             log.error("Document not found.");
         }
         else {
-            log.info("Document found.");
+            log.info("Document found: " + document);
             document.setContent(OCRText);
             documentRepository.save(document);
             if(document.getContent() != null){
@@ -261,19 +282,30 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public void indexDocument(Document document) {
-        EsDocument esDocument = convertToEsDocument(document);
-        log.info("Indexing document: " + esDocument);
-        elasticSearchRepository.save(esDocument);
+        try {
+            EsDocument esDocument = convertToEsDocument(document);
+            log.info("Indexing document: " + esDocument);
+            elasticSearchRepository.save(esDocument);
+        }
+        catch (Exception e) {
+            log.error("Error while indexing document.", e);
+        }
     }
 
 
     private EsDocument convertToEsDocument(Document document) {
         EsDocument esDocument = new EsDocument();
+        //exception handling
+        if (esDocument == null) {
+            log.error("Error converting document to ES document.");
+            return null;
+        }
         esDocument.setId(document.getId());
         esDocument.setTitle(document.getTitle());
         esDocument.setContent(document.getContent()); // Assuming you have a content field
         // Map other fields as necessary
         log.info("Converted document to ES document: " + esDocument);
+
         return esDocument;
     }
 
@@ -281,9 +313,10 @@ public class DocumentServiceImpl implements DocumentService {
     public DocumentDTO getDocumentById(Integer id) {
         // Retrieve the document entity by ID
         Document document = documentRepository.findById(id).orElse(null);
-
+        log.info("Document found: " + document);
         // Check if the document entity is found
         if (document == null) {
+            log.error("Document not found with ID: " + id);
             return null;
         }
 
@@ -293,7 +326,14 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public void setBucketName(String s) {
+
+        if (s == null) {
+            log.error("Bucket name is null.");
+            return;
+        }
         bucketName = s;
+        log.info("Bucket name set to: " + bucketName);
+
 
     }
 
@@ -341,6 +381,7 @@ public class DocumentServiceImpl implements DocumentService {
         if (document != null) {
             String documentPath = document.getStoragePath().getPath(); // Assuming this is the path to the PDF file in MinIO
 
+
             try (InputStream pdfStream = minioClient.getObject(GetObjectArgs.builder()
                     .bucket(bucketName)
                     .object(documentPath)
@@ -352,6 +393,7 @@ public class DocumentServiceImpl implements DocumentService {
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(image, "png", baos); // You can choose "jpeg" or "png" depending on your requirement
+                log.info("Thumbnail created for document with ID: " + id);
 
                 return new ByteArrayResource(baos.toByteArray());
             } catch (Exception e) {
@@ -384,6 +426,7 @@ public class DocumentServiceImpl implements DocumentService {
                 while ((bytesRead = pdfStream.read(buffer)) != -1) {
                     baos.write(buffer, 0, bytesRead);
                 }
+                log.info("Document downloaded from MinIO with ID: " + id);
 
                 return new ByteArrayResource(baos.toByteArray());
             } catch (Exception e) {
