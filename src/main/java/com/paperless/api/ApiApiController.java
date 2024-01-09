@@ -1,21 +1,25 @@
 package com.paperless.api;
 
 
-import com.paperless.services.dto.DocumentDTO;
-import com.paperless.services.dto.GetDocument200Response;
-import com.paperless.services.dto.GetDocuments200Response;
-import com.paperless.services.dto.UpdateDocument200Response;
-import com.paperless.services.dto.UpdateDocumentRequest;
+import com.paperless.services.dto.*;
 import com.paperless.services.impl.DocumentServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Generated;
+import javax.validation.Valid;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +28,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 
 @Generated(value = "com.paperless.codegen.languages.SpringCodegen", date = "2023-10-22T12:32:07.613318Z[Etc/UTC]")
 @Controller
+@Slf4j
 @RequestMapping("${openapi.paperlessRestServer.base-path:}")
 public class ApiApiController implements ApiApi {
     private final DocumentServiceImpl documentServiceImpl;
@@ -58,11 +63,17 @@ public class ApiApiController implements ApiApi {
             documentDTO.setDocumentType(JsonNullable.of(documentType));
             documentDTO.setTags(JsonNullable.of(tags));
             documentDTO.setCorrespondent(JsonNullable.of(correspondent));
+            log.info("uploadDocument CALLED: " + documentDTO.toString());
 
             MultipartFile file = document.get(0);
 
             if(file == null || file.isEmpty()){
                 return ResponseEntity.badRequest().build();
+            }
+
+            String[] fileExtension = name.split("\\.");
+            if(!fileExtension[fileExtension.length-1].equalsIgnoreCase("pdf")){
+                return new ResponseEntity<>(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
             }
 
             documentServiceImpl.uploadDocument(documentDTO, file);
@@ -86,32 +97,101 @@ public class ApiApiController implements ApiApi {
     }
 
     @Override
-    public ResponseEntity<String> getDocumentPreview(Integer id) {
+    public ResponseEntity <org.springframework.core.io.Resource> getDocumentPreview(Integer id) {
+        log.info("Get Document-Preview with DocumentID " + id);
         try {
-            // Retrieve the document by ID
-            DocumentDTO document = documentServiceImpl.getDocumentById(id);
-            if (document == null || document.getContent() == null) {
+            Resource documentContent = documentServiceImpl.downloadDocument(id);
+
+            if (documentContent != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(documentContent);
+            } else {
+                // Return an appropriate error response
+                log.info("Could not fetch document content - using default response");
                 return ResponseEntity.notFound().build();
             }
-
-            // Extract a preview of the content
-            String contentPreview = extractContentPreview(document.getContent().orElse(""));
-
-            // Return the preview content
-            return ResponseEntity.ok(contentPreview);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
+            // Log the exception and return an appropriate error response
+            log.error("Error retrieving document content: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    private String extractContentPreview(String content) {
-        // Define the preview length
-        int previewLength = 100; // or any other logic to determine the preview size
-
-        // Return a substring of the content based on the preview length
-        return content.length() > previewLength ? content.substring(0, previewLength) : content;
+    @Override
+    public ResponseEntity<Void> deleteDocument(Integer id) {
+        try {
+            log.info("deleteDocument at id ------------------------->" + id );
+            documentServiceImpl.deleteDocument(id);
+            return new ResponseEntity<>(HttpStatus.OK); // 204 No Content
+        } catch (Exception e) {
+            log.error("Error deleting documents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
+
+    @Override
+    public ResponseEntity<Void> deleteCorrespondent(Integer id) {
+        try {
+            log.info("deleteCorespondent at id ------------------------->" + id );
+            documentServiceImpl.deleteDocument(id);
+            return new ResponseEntity<>(HttpStatus.OK); // 204 No Content
+        } catch (Exception e) {
+            log.error("Error deleting documents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Override
+    public ResponseEntity<SelectionData200Response> selectionData(@Valid @RequestBody(required = false) SelectionDataRequest selectionDataRequest) {
+        log.info("SelectionData CALLED: " + selectionDataRequest.toString());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<Resource> getDocumentThumb(Integer id) {
+        try {
+            Resource thumbnail = documentServiceImpl.getDocumentThumbnail(id);
+            if (thumbnail != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG) // or the appropriate media type
+                        .body(thumbnail);
+            } else {
+                // Return default thumbnail
+                log.info("Could not fetch Pdf-Thumbnail - using default pdf thumbnail");
+                Resource defaultThumbnail = new ClassPathResource("pdficon.png");
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG)
+                        .body(defaultThumbnail);
+            }
+        } catch (Exception e) {
+            // Log the exception and return an appropriate error response
+            log.error("Error retrieving document thumbnail: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @Override
+    public ResponseEntity<Resource> downloadDocument (Integer id, Boolean original){
+        log.info("Donwload selected original: " + original + " with DocumentID " + id);
+        try {
+            Resource documentContent = documentServiceImpl.downloadDocument(id);
+
+            if (documentContent != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        .body(documentContent);
+            } else {
+                // Return an appropriate error response
+                log.info("Could not fetch document content - using default response");
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            // Log the exception and return an appropriate error response
+            log.error("Error retrieving document content: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 
 

@@ -10,144 +10,117 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import java.util.Set;
 
-@SpringBootTest
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+
 @Slf4j
 class AuthUserValidationTests {
-    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-    Validator validator = factory.getValidator();
+    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
-    @DisplayName("Validate with valid username, first name, last name, password and email")
+    @DisplayName("All fields are valid")
     void allValid() {
         // Arrange
-        AuthUser authUser = new AuthUser();
-        authUser.setUsername("username");
-        authUser.setFirstName("first");
-        authUser.setLastName("last");
-        authUser.setPassword("ValidPwd1#");
-        authUser.setEmail("example@test.com");
+        AuthUser authUser = createValidAuthUser();
 
         // Act
-        var violations = validator.validate(authUser);
+        Set<ConstraintViolation<AuthUser>> violations = validator.validate(authUser);
 
         // Assert
-        assert violations.isEmpty();
+        assertTrue(violations.isEmpty(), "Expected no violations, but found: " + violations);
     }
 
     @Test
-    @DisplayName("Validate with invalid username")
+    @DisplayName("Username is invalid")
     void usernameInvalid() {
         // Arrange
-        AuthUser authUser = new AuthUser();
-        authUser.setUsername("u");
-        authUser.setFirstName("first");
-        authUser.setLastName("last");
-        authUser.setPassword("ValidPwd1#");
-        authUser.setEmail("example@test.com");
+        AuthUser authUser = createValidAuthUser();
+        authUser.setUsername("r");
 
         // Act
-        var violations = validator.validate(authUser);
-
-        for (var violation : violations)
-        {
-            log.error(violation.getMessage());
-        }
+        Set<ConstraintViolation<AuthUser>> violations = validator.validate(authUser);
 
         // Assert
-        assert !violations.isEmpty();
+        assertFalse(violations.isEmpty(), "Expected violations for username");
+        logViolations(violations);
     }
 
     @Test
-    @DisplayName("Validate with invalid password")
+    @DisplayName("Password is invalid")
     void passwordInvalid() {
         // Arrange
-        AuthUser authUser = new AuthUser();
-        authUser.setUsername("username");
-        authUser.setFirstName("first");
-        authUser.setLastName("last");
-        authUser.setPassword("InvalidPwd");
-        authUser.setEmail("example@test.com");
+        AuthUser authUser = createValidAuthUser();
+        authUser.setPassword("1234");
 
         // Act
-        var violations = validator.validate(authUser);
-
-        for (var violation : violations)
-        {
-            log.error(violation.getMessage());
-        }
+        Set<ConstraintViolation<AuthUser>> violations = validator.validate(authUser);
 
         // Assert
-        assert !violations.isEmpty();
+        assertFalse(violations.isEmpty(), "Expected violations for password");
+        logViolations(violations);
     }
 
     @Test
-    @DisplayName("Validate with invalid first name")
+    @DisplayName("First name is invalid")
     void firstNameInvalid() {
         // Arrange
-        AuthUser authUser = new AuthUser();
-        authUser.setUsername("username");
-        authUser.setFirstName("f");
-        authUser.setLastName("last");
-        authUser.setPassword("ValidPwd1#");
-        authUser.setEmail("example@test.com");
+        AuthUser authUser = createValidAuthUser();
+        authUser.setFirstName("m");
 
         // Act
-        var violations = validator.validate(authUser);
-
-        for (var violation : violations)
-        {
-            log.error(violation.getMessage());
-        }
+        Set<ConstraintViolation<AuthUser>> violations = validator.validate(authUser);
 
         // Assert
-        assert !violations.isEmpty();
+        assertFalse(violations.isEmpty(), "Expected violations for first name");
+        logViolations(violations);
     }
 
     @Test
-    @DisplayName("Validate with invalid last name")
+    @DisplayName("Last name is invalid")
     void lastNameInvalid() {
         // Arrange
-        AuthUser authUser = new AuthUser();
-        authUser.setUsername("username");
-        authUser.setFirstName("first");
-        authUser.setLastName("l");
-        authUser.setPassword("ValidPwd1#");
-        authUser.setEmail("example@test.com");
+        AuthUser authUser = createValidAuthUser();
+        authUser.setLastName("v");
 
         // Act
-        var violations = validator.validate(authUser);
-
-        for (var violation : violations)
-        {
-            log.error(violation.getMessage());
-        }
+        Set<ConstraintViolation<AuthUser>> violations = validator.validate(authUser);
 
         // Assert
-        assert !violations.isEmpty();
+        assertFalse(violations.isEmpty(), "Expected violations for last name");
+        logViolations(violations);
     }
 
     @Test
-    @DisplayName("Validate with invalid email")
+    @DisplayName("Email is invalid")
     void emailInvalid() {
         // Arrange
-        AuthUser authUser = new AuthUser();
-        authUser.setUsername("username");
-        authUser.setFirstName("first");
-        authUser.setLastName("last");
-        authUser.setPassword("ValidPwd1#");
-        authUser.setEmail("exampletest.com");
+        AuthUser authUser = createValidAuthUser();
+        authUser.setEmail("MaxVerrb.com");
 
         // Act
-        var violations = validator.validate(authUser);
-
-        for (var violation : violations)
-        {
-            log.error(violation.getMessage());
-        }
+        Set<ConstraintViolation<AuthUser>> violations = validator.validate(authUser);
 
         // Assert
-        assert !violations.isEmpty();
+        assertFalse(violations.isEmpty(), "Expected violations for email");
+        logViolations(violations);
+    }
+
+    private AuthUser createValidAuthUser() {
+        AuthUser authUser = new AuthUser();
+        authUser.setUsername("RedBull24");
+        authUser.setFirstName("Max");
+        authUser.setLastName("Verstappen");
+        authUser.setPassword("PolePosition1+");
+        authUser.setEmail("MaxVer@gmail.com");
+        return authUser;
+    }
+
+    private void logViolations(Set<ConstraintViolation<AuthUser>> violations) {
+        for (var violation : violations) {
+            log.error(violation.getMessage());
+        }
     }
 }

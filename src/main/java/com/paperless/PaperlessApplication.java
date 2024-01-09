@@ -22,7 +22,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
   basePackages = "com.paperless.persistence.repositories"
 )
 @EnableElasticsearchRepositories(
-  basePackages = "com.paperless.persistence.esrepositories"
+  basePackages = "com.paperless.elasticsearch"
 )
 public class PaperlessApplication {
 

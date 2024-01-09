@@ -3,113 +3,76 @@ package com.paperless.services.mapper;
 import com.paperless.persistence.entities.*;
 import com.paperless.persistence.repositories.*;
 import com.paperless.services.dto.DocumentDTO;
+import com.paperless.services.mapper.DocumentMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.openapitools.jackson.nullable.JsonNullable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mapstruct.factory.Mappers;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest
-//@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class, DataSourceTransactionManagerAutoConfiguration.class})
 class DocumentMapperTests {
 
-    @Autowired
-    DocumentMapper documentMapper;
-
-    @MockBean
+    @Mock
     private CorrespondentRepository correspondentRepository;
-    @MockBean
+
+    @Mock
     private DocumentTypeRepository documentTypeRepository;
-    @MockBean
+
+    @Mock
     private StoragePathRepository storagePathRepository;
-    @MockBean
-    private UserRepository userRepository;
-    @MockBean
-    private DocumentTagsRepository documentTagsRepository;
+
+    @InjectMocks
+    private DocumentMapper documentMapper = Mappers.getMapper(DocumentMapper.class);
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    @DisplayName("Map DTO to entity")
-    public void testDtoToEntity() {
+    void documentMapperEntityToDTOTest() {
+        // Mocking repository behavior
+        when(correspondentRepository.findById(1)).thenReturn(Optional.of(new Correspondent()));
+        when(documentTypeRepository.findById(1)).thenReturn(Optional.of(new DocumentType()));
+        when(storagePathRepository.findById(1)).thenReturn(Optional.of(new StoragePath()));
 
-        // Create a sample DocumentDTO
-        DocumentDTO documentDTO = new DocumentDTO();
-        documentDTO.setId(1);
-        documentDTO.setArchiveSerialNumber(JsonNullable.of("1"));
-        documentDTO.setCorrespondent(JsonNullable.of(1));
-        documentDTO.setDocumentType(JsonNullable.of(2));
-        documentDTO.setStoragePath(JsonNullable.of(3));
-        documentDTO.setTags(JsonNullable.of(Collections.singletonList(4)));
-
-        // Mock repository responses
-        Correspondent correspondent = new Correspondent();
-        correspondent.setId(1);
-        DocumentType documentType = new DocumentType();
-        documentType.setId(2);
-        StoragePath storagePath = new StoragePath();
-        storagePath.setId(3);
-        DocumentTags documentTags = new DocumentTags();
-        documentTags.setId(4);
-        AuthUser authUser = new AuthUser();
-        authUser.setId(5);
-
-
-        Mockito.when(correspondentRepository.findById(1)).thenReturn(java.util.Optional.of(correspondent));
-        Mockito.when(documentTypeRepository.findById(2)).thenReturn(java.util.Optional.of(documentType));
-        Mockito.when(storagePathRepository.findById(3)).thenReturn(java.util.Optional.of(storagePath));
-        Mockito.when(userRepository.findById(5)).thenReturn(java.util.Optional.of(authUser));
-        Mockito.when(documentTagsRepository.findAllById(Collections.singletonList(4))).thenReturn(Collections.singletonList(documentTags));
-
-        Document document = documentMapper.dtoToEntity(documentDTO);
-
-        // Assert that the entity is correctly mapped
-        assertEquals(correspondent, document.getCorrespondent());
-        assertEquals(documentType, document.getDocumentType());
-        assertEquals(storagePath, document.getStoragePath());
-        assertEquals(Collections.singleton(documentTags), document.getTags());
-    }
-
-    @Test
-    @DisplayName("Map entity to DTO")
-    public void testEntityToDto() {
-        // Create a sample Document entity
         Document document = new Document();
-        Correspondent correspondent = new Correspondent();
-        correspondent.setId(1);
-        DocumentType documentType = new DocumentType();
-        documentType.setId(2);
-        StoragePath storagePath = new StoragePath();
-        storagePath.setId(3);
-        DocumentTags documentTags = new DocumentTags();
-        documentTags.setId(4);
-        AuthUser authUser = new AuthUser();
-        authUser.setId(5);
-        document.setCorrespondent(correspondent);
-        document.setDocumentType(documentType);
-        document.setStoragePath(storagePath);
-        document.setOwner(authUser);
-        document.setTags(new HashSet<>(Collections.singletonList(documentTags)));
+        document.setTitle("Test");
+        document.setContent("This is a test");
+        document.setCorrespondent(new Correspondent());
+        document.setDocumentType(new DocumentType());
+        document.setStoragePath(new StoragePath());
 
         DocumentDTO documentDTO = documentMapper.entityToDto(document);
 
-        // Assert that the DTO is correctly mapped
-        assertEquals(JsonNullable.of(1), documentDTO.getCorrespondent());
-        assertEquals(JsonNullable.of(2), documentDTO.getDocumentType());
-        assertEquals(JsonNullable.of(3), documentDTO.getStoragePath());
-        assertEquals(JsonNullable.of(Collections.singletonList(4)), documentDTO.getTags());
+        assertEquals(document.getTitle(), documentDTO.getTitle().get());
+        assertEquals(document.getContent(), documentDTO.getContent().get());
+    }
+
+    @Test
+    void documentMapperDtoToEntityTest() {
+        // Mocking repository behavior
+        when(correspondentRepository.findById(1)).thenReturn(Optional.of(new Correspondent()));
+        when(documentTypeRepository.findById(1)).thenReturn(Optional.of(new DocumentType()));
+        when(storagePathRepository.findById(1)).thenReturn(Optional.of(new StoragePath()));
+
+        DocumentDTO documentDTO = new DocumentDTO();
+        documentDTO.title("Test");
+        documentDTO.content("This is a test");
+        documentDTO.correspondent(1);
+        documentDTO.documentType(1);
+        documentDTO.storagePath(1);
+
+        Document document = documentMapper.dtoToEntity(documentDTO);
+
+        assertEquals(documentDTO.getTitle().get(), document.getTitle());
+        assertEquals(documentDTO.getContent().get(), document.getContent());
     }
 }

@@ -1,10 +1,13 @@
 package com.paperless.services.impl;
 
+import com.paperless.elasticsearch.EsDocument;
+import com.paperless.persistence.entities.Document;
 import com.paperless.services.dto.DocumentDTO;
 import com.paperless.services.dto.GetDocument200Response;
 import com.paperless.services.dto.GetDocuments200Response;
 import com.paperless.services.dto.UpdateDocument200Response;
 import com.paperless.services.dto.UpdateDocumentRequest;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,4 +25,14 @@ public interface DocumentService {
     void sendDocumentToDB(String minioPath, String OCRText);
 
     DocumentDTO getDocumentById(Integer id);
+
+    void setBucketName(String s);
+
+    void indexDocument(Document document);
+
+    void deleteDocument(Integer id);
+
+    Resource downloadDocument(Integer id);
+
+    Resource getDocumentThumbnail(Integer id);
 }
